@@ -1,4 +1,4 @@
-.PHONY: all poligon s01e01 s01e02
+.PHONY: all poligon s01e01 s01e02 s01e03
 
 # Default target
 all:
@@ -6,6 +6,7 @@ all:
 	@echo "  make poligon	- Run poligon program"
 	@echo "  make s01e01	- Run s01e01 program"
 	@echo "  make s01e02	- Run s01e02 program"
+	@echo "  make s01e03	- Run s01e03 program"
 
 # Run poligon program
 poligon:
@@ -21,3 +22,8 @@ s01e01:
 s01e02:
 	@echo "Running s01e02 program..."
 	@go run cmd/s01e02/main.go
+
+# Run s01e03 program
+s01e03:
+	@echo "Running s01e03 program..."
+	@go run cmd/s01e03/main.go

@@ -25,7 +25,7 @@ func FetchData(url string) ([]byte, error) {
 	return body, nil
 }
 
-func SendPost(url string, data map[string]interface{}) (string, error) {
+func SendPost(url string, data interface{}) (string, error) {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return "", fmt.Errorf("error marshaling JSON: %w", err)
@@ -80,4 +80,18 @@ func SendFormData(targetURL string, formData map[string]string) (string, error) 
 		return "", fmt.Errorf("error reading response body: %w", err)
 	}
 	return string(body), nil
+}
+
+// FetchJSONData retrieves and unmarshals JSON data from the specified URL into the provided target
+func FetchJSONData(url string, target interface{}) error {
+	data, err := FetchData(url)
+	if err != nil {
+		return fmt.Errorf("error fetching JSON data: %w", err)
+	}
+
+	if err := json.Unmarshal(data, target); err != nil {
+		return fmt.Errorf("error unmarshaling JSON data: %w", err)
+	}
+
+	return nil
 }

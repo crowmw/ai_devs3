@@ -28,6 +28,14 @@ func GetXYZURL() string {
 	return os.Getenv("XYZ_URL")
 }
 
+func GetMyAPIKey() string {
+	return os.Getenv("MY_API_KEY")
+}
+
 func GetPoligonURL() string {
 	return os.Getenv("POLIGON_URL")
+}
+
+func GetC3ntralaURL() string {
+	return os.Getenv("C3NTRALA_URL")
 }

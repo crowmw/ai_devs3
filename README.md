@@ -30,8 +30,6 @@ The project uses Makefile for easy execution. Here are the available commands:
 # Show all available commands
 make
 
-# Run project
-make prelekcja
 ```
 
 ## 📧 Contact

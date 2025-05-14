@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/crowmw/ai_devs3/pkg/config"
 	"github.com/crowmw/ai_devs3/pkg/http"
@@ -33,9 +32,9 @@ func main() {
 	}
 
 	// Get API key
-	apiKey := os.Getenv("POLIGON_API_KEY")
+	apiKey := config.GetMyAPIKey()
 	if apiKey == "" {
-		fmt.Println("POLIGON_API_KEY environment variable is not set")
+		fmt.Println("MY_API_KEY environment variable is not set")
 		return
 	}
 
