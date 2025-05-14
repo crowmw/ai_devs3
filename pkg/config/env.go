@@ -1,0 +1,33 @@
+package config
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/joho/godotenv"
+)
+
+// LoadEnv loads environment variables from .env file
+func LoadEnv() error {
+	err := godotenv.Load()
+	if err != nil {
+		return fmt.Errorf("error loading .env file: %w", err)
+	}
+	return nil
+}
+
+func GetOpenAIKey() string {
+	return os.Getenv("OPENAI_API_KEY")
+}
+
+func GetRobotGuardURL() string {
+	return os.Getenv("ROBOT_GUARD_URL")
+}
+
+func GetXYZURL() string {
+	return os.Getenv("XYZ_URL")
+}
+
+func GetPoligonURL() string {
+	return os.Getenv("POLIGON_URL")
+}
