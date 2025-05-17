@@ -153,16 +153,8 @@ func (r *IndustrialRobot) Recalibrate() error {
 func (r *IndustrialRobot) SendCalibrationReport() error {
 	fmt.Println("Sending calibration report...")
 
-	postData := map[string]interface{}{
-		"task":   "JSON",
-		"answer": r.calibrationData,
-		"apikey": config.GetMyAPIKey(),
-	}
+	resp, err := http.SendC3ntralaReport("JSON", r.calibrationData)
 
-	resp, err := http.SendPost(
-		config.GetC3ntralaURL()+"/report",
-		postData,
-	)
 	if err != nil {
 		return fmt.Errorf("error sending calibration report: %w", err)
 	}

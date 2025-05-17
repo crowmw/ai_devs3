@@ -1,10 +1,20 @@
 package processor
 
 import (
+	"fmt"
+	"os"
 	"strings"
 
 	"github.com/antchfx/htmlquery"
 )
+
+func ReadMarkdownFile(filePath string) (string, error) {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("error reading markdown file: %w", err)
+	}
+	return string(content), nil
+}
 
 // ReadLinesFromTextFile processes raw data into filtered lines
 func ReadLinesFromTextFile(data []byte) []string {
