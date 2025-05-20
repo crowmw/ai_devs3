@@ -3,6 +3,7 @@ package processor
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/antchfx/htmlquery"
@@ -55,4 +56,42 @@ func ExtractTextFromHTML(htmlString string, xpathQuery string) string {
 	text := htmlquery.InnerText(node)
 
 	return text
+}
+
+// ReadAllTxtFilesFromDirectory reads all .txt files from the specified directory
+// and combines their content into a single string
+func ReadAllTxtFilesFromDirectory(dirPath string) (string, error) {
+	// Read all files from directory
+	files, err := os.ReadDir(dirPath)
+	if err != nil {
+		return "", fmt.Errorf("error reading directory: %w", err)
+	}
+
+	var allContent strings.Builder
+
+	// Process each file
+	for _, file := range files {
+		// Skip directories and non-txt files
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".txt") {
+			continue
+		}
+
+		// Read file content
+		filePath := filepath.Join(dirPath, file.Name())
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			return "", fmt.Errorf("error reading file %s: %w", file.Name(), err)
+		}
+
+		// Process content using existing function
+		processedContent := ReadLinesFromTextFileAsString(content)
+
+		// Add to combined content with a newline separator
+		if allContent.Len() > 0 {
+			allContent.WriteString("\n")
+		}
+		allContent.WriteString(processedContent)
+	}
+
+	return allContent.String(), nil
 }

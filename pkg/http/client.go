@@ -30,7 +30,16 @@ func SendPost(url string, data interface{}) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error marshaling JSON: %w", err)
 	}
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", fmt.Errorf("error creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("error sending POST request: %w", err)
 	}
