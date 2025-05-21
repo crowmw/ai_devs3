@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -94,4 +95,53 @@ func ReadAllTxtFilesFromDirectory(dirPath string) (string, error) {
 	}
 
 	return allContent.String(), nil
+}
+
+func ReadImageToBase64(path string) (string, error) {
+	// Read the image file
+	imageBytes, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("error reading image file: %v", err)
+	}
+
+	// Convert to base64
+	base64String := base64.StdEncoding.EncodeToString(imageBytes)
+	return base64String, nil
+}
+
+// ReadAllImagesFromDirectory reads all image files from the specified directory
+// and converts them to base64 strings
+func ReadAllImagesFromDirectory(dirPath string) ([]string, error) {
+	// Read all files from directory
+	files, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading directory: %w", err)
+	}
+
+	var base64Images []string
+
+	// Process each file
+	for _, file := range files {
+		// Skip directories and non-image files
+		if file.IsDir() {
+			continue
+		}
+
+		// Check if file is an image (you can add more extensions if needed)
+		ext := strings.ToLower(filepath.Ext(file.Name()))
+		if ext != ".jpg" && ext != ".jpeg" && ext != ".png" {
+			continue
+		}
+
+		// Read and convert image to base64
+		filePath := filepath.Join(dirPath, file.Name())
+		base64String, err := ReadImageToBase64(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("error processing image %s: %w", file.Name(), err)
+		}
+
+		base64Images = append(base64Images, base64String)
+	}
+
+	return base64Images, nil
 }
