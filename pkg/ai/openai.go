@@ -57,3 +57,29 @@ func TranscribeAudio(audioFilePath string) (string, error) {
 
 	return resp.Text, nil
 }
+
+// GenerateImageWithDalle generates an image using DALL-E 3 model
+func GenerateImageWithDalle(prompt string) (string, error) {
+	fmt.Println("Generating image with DALL-E 3...")
+	client := openai.NewClient(config.GetOpenAIKey())
+
+	req := openai.ImageRequest{
+		Model:   "dall-e-3",
+		Prompt:  prompt,
+		N:       1,
+		Size:    "1024x1024",
+		Quality: "standard",
+		Style:   "natural",
+	}
+
+	resp, err := client.CreateImage(context.Background(), req)
+	if err != nil {
+		return "", fmt.Errorf("error creating image: %w", err)
+	}
+
+	if len(resp.Data) == 0 {
+		return "", fmt.Errorf("no image data in response")
+	}
+
+	return resp.Data[0].URL, nil
+}
