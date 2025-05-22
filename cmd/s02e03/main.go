@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/crowmw/ai_devs3/pkg/ai"
 	"github.com/crowmw/ai_devs3/pkg/config"
 	"github.com/crowmw/ai_devs3/pkg/http"
+	"github.com/crowmw/ai_devs3/pkg/robot"
 )
 
 type RobotDescriptionResult struct {
@@ -19,28 +19,13 @@ func main() {
 		return
 	}
 
-	var robotDescriptionResult RobotDescriptionResult
-	err := http.FetchJSONData(config.GetC3ntralaURL()+"/data/"+config.GetMyAPIKey()+"/robotid.json", &robotDescriptionResult)
+	robot, err := robot.NewSentryRobot()
 	if err != nil {
-		fmt.Println("Error fetching robot description:", err)
+		fmt.Println("Error creating robot:", err)
 		return
 	}
 
-	fmt.Println("Robot description:", robotDescriptionResult.Description)
-
-	// Create a detailed prompt for DALL-E
-	prompt := fmt.Sprintf("Create a detailed, high-quality image of a robot with the following characteristics: %s. The image should be photorealistic, with high attention to detail and professional lighting.", robotDescriptionResult.Description)
-
-	// Generate image using DALL-E 3
-	imageURL, err := ai.GenerateImageWithDalle(prompt)
-	if err != nil {
-		fmt.Println("Error generating image:", err)
-		return
-	}
-
-	fmt.Println("Generated image URL:", imageURL)
-
-	report, err := http.SendC3ntralaReport("robotid", imageURL)
+	report, err := http.SendC3ntralaReport("robotid", robot.ImageURL)
 	if err != nil {
 		fmt.Println("Error sending report:", err)
 		return
