@@ -103,6 +103,38 @@ func ExtractZipToDirectory(zipData []byte, dirName string) error {
 	return nil
 }
 
+// TranscribeAudioFile transcribes a single audio file and saves the transcription
+// Returns the path to the saved transcription file
+func TranscribeAudioFile(audioPath string, outputDir string) (string, error) {
+	// Get the base name without extension
+	baseName := strings.TrimSuffix(filepath.Base(audioPath), filepath.Ext(audioPath))
+	fmt.Println("Processing audio file:", baseName+filepath.Ext(audioPath))
+
+	// Set up transcription file path
+	transcriptionPath := filepath.Join(outputDir, baseName+".txt")
+
+	// Check if transcription already exists
+	if _, err := os.Stat(transcriptionPath); err == nil {
+		fmt.Println("Transcription already exists for:", baseName)
+		return transcriptionPath, nil
+	}
+
+	// Transcribe the audio file
+	transcription, err := ai.TranscribeAudio(audioPath)
+	if err != nil {
+		return "", fmt.Errorf("error transcribing file %s: %w", audioPath, err)
+	}
+
+	// Save the transcription
+	fmt.Println("Transcription:", transcription)
+	fmt.Println("Transcription path:", transcriptionPath)
+	if err := os.WriteFile(transcriptionPath, []byte(transcription), 0644); err != nil {
+		return "", fmt.Errorf("error saving transcription for %s: %w", audioPath, err)
+	}
+
+	return transcriptionPath, nil
+}
+
 // ProcessAudioFiles transcribes audio files and saves transcriptions
 func ProcessAudioFiles(hashDir string) error {
 	// Check if transcriptions directory exists
@@ -128,20 +160,10 @@ func ProcessAudioFiles(hashDir string) error {
 			return nil
 		}
 
-		// Get the base name without extension
-		baseName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
-		fmt.Println("Processing audio file:", baseName+".m4a")
-		transcriptionPath := filepath.Join(transcriptionsDir, baseName+".txt")
-
 		// Transcribe the audio file
-		transcription, err := ai.TranscribeAudio(path)
+		_, err = TranscribeAudioFile(path, transcriptionsDir)
 		if err != nil {
-			return fmt.Errorf("error transcribing file %s: %w", path, err)
-		}
-
-		// Save the transcription
-		if err := os.WriteFile(transcriptionPath, []byte(transcription), 0644); err != nil {
-			return fmt.Errorf("error saving transcription for %s: %w", path, err)
+			return fmt.Errorf("error processing file %s: %w", path, err)
 		}
 
 		return nil
