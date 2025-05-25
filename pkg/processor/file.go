@@ -8,7 +8,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/antchfx/htmlquery"
 	"github.com/crowmw/ai_devs3/pkg/ai"
+	"github.com/crowmw/ai_devs3/pkg/config"
+	httpclient "github.com/crowmw/ai_devs3/pkg/http"
+	"golang.org/x/net/html"
 )
 
 // createTempFileWithData creates a temporary file and writes the provided data to it
@@ -171,6 +175,142 @@ func ProcessAudioFiles(hashDir string) error {
 
 	if err != nil {
 		return fmt.Errorf("error processing audio files: %w", err)
+	}
+
+	return nil
+}
+
+// CreateTranscriptionDirectory creates a directory for transcriptions if it doesn't exist
+func CreateTranscriptionDirectory(dirPath string) error {
+	transcriptionsDir := filepath.Join(dirPath, "transcriptions")
+	// Check if transcription already exists
+	if _, err := os.Stat(transcriptionsDir); err == nil {
+		fmt.Println("Transcription already exists for:", transcriptionsDir)
+		return nil
+	}
+	return os.Mkdir(transcriptionsDir, 0755)
+}
+
+// ProcessAudioElements processes audio elements in HTML and replaces them with transcriptions
+func ProcessAudioElements(doc *html.Node, outputDir string) error {
+	// Find all audio elements
+	audioNodes := htmlquery.Find(doc, "//source")
+	for i, node := range audioNodes {
+		src := htmlquery.SelectAttr(node, "src")
+		if src == "" {
+			continue
+		}
+
+		// Handle relative URLs
+		if !strings.HasPrefix(src, "http") {
+			src = config.GetC3ntralaURL() + "/dane/" + src
+		}
+
+		fmt.Println("Fetching audio:", src)
+		// Fetch audio
+		audioData, err := httpclient.FetchData(src)
+		if err != nil {
+			return fmt.Errorf("error fetching audio %s: %w", src, err)
+		}
+
+		// Extract filename from URL or create numbered filename
+		filename := filepath.Base(src)
+		if filename == "" {
+			filename = fmt.Sprintf("audio_%d.mp3", i)
+		}
+
+		// Save audio
+		audioPath := filepath.Join(outputDir, filename)
+		if err := os.WriteFile(audioPath, audioData, 0644); err != nil {
+			return fmt.Errorf("error saving audio %s: %w", audioPath, err)
+		}
+
+		fmt.Println("Transcribing audio:", audioPath)
+		// Transcribe audio
+		transcription, err := ai.TranscribeAudioAndFormat(audioPath)
+		if err != nil {
+			return fmt.Errorf("error transcribing audio %s: %w", audioPath, err)
+		}
+
+		// Create a new text node with the transcription
+		descriptionNode := &html.Node{
+			Type: html.TextNode,
+			Data: transcription,
+		}
+
+		// Replace the audio node with the transcription node
+		parent := node.Parent
+		if parent != nil {
+			parent.InsertBefore(descriptionNode, node)
+			parent.RemoveChild(node)
+		}
+	}
+
+	return nil
+}
+
+// ProcessImageElements processes image elements in HTML and replaces them with descriptions
+func ProcessImageElements(doc *html.Node, outputDir string) error {
+	// Find all image elements
+	imageNodes := htmlquery.Find(doc, "//img")
+	for i, node := range imageNodes {
+		src := htmlquery.SelectAttr(node, "src")
+		if src == "" {
+			continue
+		}
+
+		// Handle relative URLs
+		if !strings.HasPrefix(src, "http") {
+			src = config.GetC3ntralaURL() + "/dane/" + src
+		}
+
+		// Fetch image
+		fmt.Println("Fetching image:", src)
+		imageData, err := httpclient.FetchData(src)
+		if err != nil {
+			return fmt.Errorf("error fetching image %s: %w", src, err)
+		}
+
+		// Extract filename from URL or create numbered filename
+		filename := filepath.Base(src)
+		if filename == "" {
+			filename = fmt.Sprintf("image_%d.png", i)
+		}
+
+		// Save image
+		imagePath := filepath.Join(outputDir, filename)
+		if err := os.WriteFile(imagePath, imageData, 0644); err != nil {
+			return fmt.Errorf("error saving image %s: %w", imagePath, err)
+		}
+
+		// Read image to base64
+		fmt.Println("Reading image to base64:", imagePath)
+		imageBase64, err := ReadImageToBase64(imagePath)
+		if err != nil {
+			return fmt.Errorf("error reading image %s: %w", imagePath, err)
+		}
+
+		// Get image format from extension
+		format := strings.TrimPrefix(strings.ToLower(filepath.Ext(imagePath)), ".")
+
+		// Describe image
+		imageDescription, err := ai.DescribeImageAndFormat(imageBase64, format)
+		if err != nil {
+			return fmt.Errorf("error describing image %s: %w", imagePath, err)
+		}
+
+		// Create a new text node with the image description
+		descriptionNode := &html.Node{
+			Type: html.TextNode,
+			Data: imageDescription,
+		}
+
+		// Replace the image node with the description node
+		parent := node.Parent
+		if parent != nil {
+			parent.InsertBefore(descriptionNode, node)
+			parent.RemoveChild(node)
+		}
 	}
 
 	return nil

@@ -34,11 +34,6 @@ func ReadLinesFromTextFileAsString(data []byte) string {
 	return strings.Join(ReadLinesFromTextFile(data), "\n")
 }
 
-// GetHTMLString converts HTML byte data to string
-func GetHTMLString(data []byte) string {
-	return string(data)
-}
-
 // ExtractTextFromHTML extracts text content from HTML using XPath
 // xpathQuery - XPath query to find the element (e.g. "//p[@id='human-question']")
 func ExtractTextFromHTML(htmlString string, xpathQuery string) string {
@@ -129,7 +124,7 @@ func ReadAllImagesFromDirectory(dirPath string) ([]string, error) {
 
 		// Check if file is an image (you can add more extensions if needed)
 		ext := strings.ToLower(filepath.Ext(file.Name()))
-		if ext != ".jpg" && ext != ".jpeg" && ext != ".png" {
+		if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
 			continue
 		}
 

@@ -32,3 +32,43 @@ func GetYearExtractionPrompt(question string) []openai.ChatCompletionMessage {
 		},
 	}
 }
+
+const imageAnalysisPrompt = `You are a helpful assistant that analyzes images.
+Your task is to describe what you see in the image in a clear and concise way.
+Focus on the main subjects, important details, and overall composition.
+Describe any text, symbols, or notable visual elements.
+Keep your description objective and factual.
+Respond in a natural, conversational tone.
+Do not mention that you are an AI or that you are analyzing an image.
+Do not include phrases like "I see" or "I can see".
+Just describe what is present in the image directly.`
+
+// GetImageAnalysisPrompt creates a chat completion message for image analysis
+func GetImageAnalysisPrompt(imageBase64 string, format string, userText string) []openai.ChatCompletionMessage {
+	prompt := []openai.ChatCompletionMessage{
+		{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: imageAnalysisPrompt,
+		},
+		{
+			Role: openai.ChatMessageRoleUser,
+			MultiContent: []openai.ChatMessagePart{
+				{
+					Type: openai.ChatMessagePartTypeText,
+					Text: userText,
+				},
+			},
+		},
+	}
+
+	// Add image parts to the message
+	prompt[1].MultiContent = append(prompt[1].MultiContent, openai.ChatMessagePart{
+		Type: openai.ChatMessagePartTypeImageURL,
+		ImageURL: &openai.ChatMessageImageURL{
+			URL:    "data:image/" + format + ";base64," + imageBase64,
+			Detail: openai.ImageURLDetailHigh,
+		},
+	})
+
+	return prompt
+}

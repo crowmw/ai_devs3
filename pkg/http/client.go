@@ -53,6 +53,34 @@ func SendPost(url string, data interface{}) (string, error) {
 	return string(responseBody), nil
 }
 
+func SendJSONPost(url string, data interface{}) (string, error) {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return "", fmt.Errorf("error marshaling JSON: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", fmt.Errorf("error creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("error sending POST request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error reading POST response: %w", err)
+	}
+
+	return string(responseBody), nil
+}
+
 // SendFormData sends a POST request with form data to the specified URL
 func SendFormData(targetURL string, formData map[string]string) (string, error) {
 	// Prepare form data

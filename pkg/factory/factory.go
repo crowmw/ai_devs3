@@ -220,13 +220,8 @@ func (f *Factory) GetAudioFilesTexts() ([]FactoryFileContent, error) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Create a directory for transcriptions
-
-	transcriptionsDir := filepath.Join(f.DirPath + "/transcriptions")
-	// Check if transcription already exists
-	if _, err := os.Stat(transcriptionsDir); err == nil {
-		fmt.Println("Transcription already exists for:", transcriptionsDir)
-	} else if err := os.Mkdir(transcriptionsDir, 0755); err != nil {
+	// Create directory for transcriptions
+	if err := processor.CreateTranscriptionDirectory(f.DirPath); err != nil {
 		return nil, fmt.Errorf("error creating transcriptions directory: %w", err)
 	}
 
@@ -241,7 +236,7 @@ func (f *Factory) GetAudioFilesTexts() ([]FactoryFileContent, error) {
 	// Process each audio file
 	for _, audio := range audios {
 		// Transcribe the audio file
-		transcriptionPath, err := processor.TranscribeAudioFile(f.DirPath+"/"+audio.File, transcriptionsDir)
+		transcriptionPath, err := processor.TranscribeAudioFile(f.DirPath+"/"+audio.File, filepath.Join(f.DirPath, "transcriptions"))
 		if err != nil {
 			return nil, fmt.Errorf("error transcribing file %s: %w", audio.File, err)
 		}
