@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/crowmw/ai_devs3/pkg/ai"
-	"github.com/crowmw/ai_devs3/pkg/config"
+	"github.com/crowmw/ai_devs3/pkg/env"
 	"github.com/crowmw/ai_devs3/pkg/factory"
 	"github.com/crowmw/ai_devs3/pkg/http"
 	"github.com/sashabaranov/go-openai"
@@ -17,12 +17,13 @@ type RobotDescriptionResult struct {
 
 func main() {
 	// Load environment variables from .env file
-	if err := config.LoadEnv(); err != nil {
+	envSvc, err := env.NewService()
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	factoryData, err := factory.NewFactory()
+	factoryData, err := factory.NewFactory(envSvc)
 	if err != nil {
 		fmt.Println(err)
 		return

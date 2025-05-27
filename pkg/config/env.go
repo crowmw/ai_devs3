@@ -39,3 +39,15 @@ func GetPoligonURL() string {
 func GetC3ntralaURL() string {
 	return os.Getenv("C3NTRALA_URL")
 }
+
+func GetQdrantURL() string {
+	return os.Getenv("QDRANT_URL")
+}
+
+func GetQdrantAPIKey() string {
+	return os.Getenv("QDRANT_KEY")
+}
+
+func GetJinaAPIKey() string {
+	return os.Getenv("JINA_API_KEY")
+}

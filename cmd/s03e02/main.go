@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 
+	"github.com/crowmw/ai_devs3/pkg/ai"
 	"github.com/crowmw/ai_devs3/pkg/env"
 	"github.com/crowmw/ai_devs3/pkg/factory"
-	"github.com/crowmw/ai_devs3/pkg/http"
+	"github.com/crowmw/ai_devs3/pkg/vector"
 )
 
 func main() {
@@ -21,19 +22,24 @@ func main() {
 		return
 	}
 
-	aiResponse, err := f.AnalyzeReports()
+	err = f.LoadWeaponTests()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(aiResponse)
 
-	// Send report
-	result, err := http.SendC3ntralaReport("dokumenty", aiResponse)
+	aiSvc, err := ai.NewService(envSvc)
 	if err != nil {
-		fmt.Println("Error sending report:", err)
+		fmt.Println(err)
 		return
 	}
 
-	fmt.Println("Result:", result)
+	vectorSvc, err := vector.NewService(envSvc, aiSvc, 1024)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	collections := vectorSvc.GetCollections()
+	fmt.Println(collections)
 }

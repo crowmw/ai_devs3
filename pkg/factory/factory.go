@@ -3,12 +3,15 @@ package factory
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/yeka/zip"
+
 	"github.com/crowmw/ai_devs3/pkg/ai"
-	"github.com/crowmw/ai_devs3/pkg/config"
+	"github.com/crowmw/ai_devs3/pkg/env"
 	"github.com/crowmw/ai_devs3/pkg/http"
 	"github.com/crowmw/ai_devs3/pkg/processor"
 	"github.com/otiai10/gosseract/v2"
@@ -21,7 +24,7 @@ type Factory struct {
 }
 
 // NewFactory creates a new Factory instance and initializes it with files
-func NewFactory() (*Factory, error) {
+func NewFactory(envSvc *env.Service) (*Factory, error) {
 	factory := &Factory{
 		DirPath: "pliki_z_fabryki",
 	}
@@ -34,7 +37,7 @@ func NewFactory() (*Factory, error) {
 
 	// Download zip file
 	fmt.Println("Downloading factory files...")
-	zipData, err := http.FetchData(config.GetC3ntralaURL() + "/data/" + config.GetMyAPIKey() + "/pliki_z_fabryki.zip")
+	zipData, err := http.FetchData(envSvc.GetC3ntralaURL() + "/data/" + envSvc.GetMyAPIKey() + "/pliki_z_fabryki.zip")
 	if err != nil {
 		return nil, fmt.Errorf("error downloading factory files: %w", err)
 	}
@@ -482,4 +485,67 @@ func (f *Factory) GetAudioFilesTexts() ([]FactoryFileContent, error) {
 	}
 
 	return texts, nil
+}
+
+// LoadWeaponTests unzips the weapons_tests.zip file from DirPath using the provided password
+func (f *Factory) LoadWeaponTests() error {
+	// Check if do-not-share directory exists
+	doNotSharePath := filepath.Join(f.DirPath, "do-not-share")
+	if _, err := os.Stat(doNotSharePath); err == nil {
+		fmt.Println("do-not-share directory already exists")
+		return nil
+	}
+
+	zipPath := filepath.Join(f.DirPath, "weapons_tests.zip")
+	// Read the zip file
+	zipReader, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return fmt.Errorf("error opening zip file: %w", err)
+	}
+	defer zipReader.Close()
+
+	// Extract each file
+	for _, file := range zipReader.File {
+		if file.IsEncrypted() {
+			file.SetPassword("1670")
+		}
+
+		// Open the file inside zip
+		rc, err := file.Open()
+		if err != nil {
+			return fmt.Errorf("error opening file in zip: %w", err)
+		}
+
+		// Create the file on disk
+		path := filepath.Join(f.DirPath, file.Name)
+		if file.FileInfo().IsDir() {
+			os.MkdirAll(path, 0755)
+			continue
+		}
+
+		// Ensure the file's directory exists
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			rc.Close()
+			return fmt.Errorf("error creating directories: %w", err)
+		}
+
+		// Create the file
+		outFile, err := os.Create(path)
+		if err != nil {
+			rc.Close()
+			return fmt.Errorf("error creating file: %w", err)
+		}
+
+		// Copy the contents
+		if _, err := io.Copy(outFile, rc); err != nil {
+			outFile.Close()
+			rc.Close()
+			return fmt.Errorf("error copying file contents: %w", err)
+		}
+
+		outFile.Close()
+		rc.Close()
+	}
+
+	return nil
 }
