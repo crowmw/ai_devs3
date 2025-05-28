@@ -127,8 +127,8 @@ func (s *Service) InitializeCollection(ctx context.Context, collection string, p
 }
 
 // savePointsToFile saves points to a JSON file
-func (s *Service) savePointsToFile(points []*qdrant.PointStruct) error {
-	pointsFilePath := filepath.Join("data", "points.json")
+func (s *Service) savePointsToFile(points []*qdrant.PointStruct, collection string) error {
+	pointsFilePath := filepath.Join("data", "vector", collection+".json")
 	if err := os.MkdirAll(filepath.Dir(pointsFilePath), 0755); err != nil {
 		return fmt.Errorf("error creating directory: %w", err)
 	}
@@ -145,17 +145,24 @@ func (s *Service) savePointsToFile(points []*qdrant.PointStruct) error {
 	return nil
 }
 
-// AddPoints adds points to a collection
-func (s *Service) AddPoints(ctx context.Context, collection string, points []struct {
+type NewPoint struct {
 	ID       string
 	Text     string
 	Metadata map[string]interface{}
-}) error {
+}
+
+// AddPoints adds points to a collection and returns the added points
+func (s *Service) AddPoints(ctx context.Context, collection string, points []NewPoint) ([]*qdrant.PointStruct, error) {
+	fmt.Println("🔍 Adding points to collection:", collection)
+	if err := s.EnsureCollectionExists(ctx, collection); err != nil {
+		return nil, err
+	}
 	pointsToUpsert := make([]*qdrant.PointStruct, len(points))
 	for i, point := range points {
+		fmt.Println("🔍 Creating embedding for point:", point.Metadata)
 		embedding, err := s.openAISvc.CreateJinaEmbedding(point.Text)
 		if err != nil {
-			return fmt.Errorf("error creating embedding: %w", err)
+			return nil, fmt.Errorf("error creating embedding: %w", err)
 		}
 
 		pointID := point.ID
@@ -171,11 +178,13 @@ func (s *Service) AddPoints(ctx context.Context, collection string, points []str
 	}
 
 	// Save points to file
-	if err := s.savePointsToFile(pointsToUpsert); err != nil {
-		return fmt.Errorf("error saving points to file: %w", err)
+	fmt.Println("🔍 Saving points to file")
+	if err := s.savePointsToFile(pointsToUpsert, collection); err != nil {
+		return nil, fmt.Errorf("error saving points to file: %w", err)
 	}
 
 	// Upsert points to Qdrant
+	fmt.Println("🔍 Upserting points to Qdrant")
 	upsertPoints := &qdrant.UpsertPoints{
 		CollectionName: collection,
 		Points:         pointsToUpsert,
@@ -183,14 +192,15 @@ func (s *Service) AddPoints(ctx context.Context, collection string, points []str
 
 	_, err := s.client.Upsert(ctx, upsertPoints)
 	if err != nil {
-		return fmt.Errorf("error upserting points: %w", err)
+		return nil, fmt.Errorf("error upserting points: %w", err)
 	}
 
-	return nil
+	return pointsToUpsert, nil
 }
 
 // PerformSearch performs a vector search
-func (s *Service) Search(ctx context.Context, collection string, query string, limit int) ([]Point, error) {
+func (s *Service) Search(ctx context.Context, collection string, query string, limit uint64) ([]*qdrant.ScoredPoint, error) {
+	fmt.Println("🔍 Searching for query:", query)
 	queryEmbedding, err := s.openAISvc.CreateJinaEmbedding(query)
 	if err != nil {
 		return nil, fmt.Errorf("error creating query embedding: %w", err)
@@ -199,24 +209,16 @@ func (s *Service) Search(ctx context.Context, collection string, query string, l
 	results, err := s.client.Query(ctx, &qdrant.QueryPoints{
 		CollectionName: collection,
 		Query:          qdrant.NewQueryDense(queryEmbedding),
+		Limit:          &limit,
 	})
+
 	if err != nil {
 		return nil, fmt.Errorf("error querying points: %w", err)
 	}
 
-	points := make([]Point, len(results))
-	for i, result := range results {
-		payload := make(map[string]interface{})
-		for k, v := range result.Payload {
-			payload[k] = v.GetStringValue()
-		}
+	return results, nil
+}
 
-		points[i] = Point{
-			ID:      result.Id.GetUuid(),
-			Payload: payload,
-			Vector:  result.Vectors.GetVector().Data,
-		}
-	}
-
-	return points, nil
+func (s *Service) DeleteCollection(ctx context.Context, collection string) error {
+	return s.client.DeleteCollection(ctx, collection)
 }

@@ -549,3 +549,59 @@ func (f *Factory) LoadWeaponTests() error {
 
 	return nil
 }
+
+type WeaponTest struct {
+	Filename string
+	Date     string
+	Content  string
+}
+
+func (f *Factory) GetWeaponTests() ([]WeaponTest, error) {
+	fmt.Println("🔍 Reading do-not-share files...")
+	doNotSharePath := filepath.Join(f.DirPath, "do-not-share")
+
+	// Check if directory exists, if not run LoadWeaponTests
+	if _, err := os.Stat(doNotSharePath); os.IsNotExist(err) {
+		if err := f.LoadWeaponTests(); err != nil {
+			return nil, fmt.Errorf("error loading weapon tests: %w", err)
+		}
+	}
+
+	// Read all files from directory
+	files, err := os.ReadDir(doNotSharePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading directory: %w", err)
+	}
+
+	var result []WeaponTest
+
+	for _, file := range files {
+		fmt.Println("🔍 Reading file:", file.Name())
+		if file.IsDir() {
+			continue
+		}
+
+		// Read file content
+		content, err := os.ReadFile(filepath.Join(doNotSharePath, file.Name()))
+		if err != nil {
+			return nil, fmt.Errorf("error reading file %s: %w", file.Name(), err)
+		}
+
+		// Get file info for modification time
+		fileInfo, err := file.Info()
+		if err != nil {
+			return nil, fmt.Errorf("error getting file info for %s: %w", file.Name(), err)
+		}
+
+		// Format date as YYYY-MM-DD
+		date := fileInfo.ModTime().Format("2006-01-02")
+
+		result = append(result, WeaponTest{
+			Filename: file.Name(),
+			Date:     date,
+			Content:  string(content),
+		})
+	}
+
+	return result, nil
+}
