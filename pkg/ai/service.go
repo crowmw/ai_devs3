@@ -2,6 +2,7 @@ package ai
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,6 +24,20 @@ func NewService(envSvc *env.Service) (*Service, error) {
 		openai: client,
 		envSvc: envSvc,
 	}, nil
+}
+
+func (s *Service) CreateOpenAIEmbedding(text string) ([]float32, error) {
+	response, err := s.openai.CreateEmbeddings(
+		context.Background(),
+		openai.EmbeddingRequest{
+			Input: []string{text},
+			Model: openai.EmbeddingModel("text-embedding-3-small"),
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error creating embedding: %w", err)
+	}
+	return response.Data[0].Embedding, nil
 }
 
 type jinaEmbeddingRequest struct {
@@ -85,4 +100,51 @@ func (s *Service) CreateJinaEmbedding(text string) ([]float32, error) {
 	}
 
 	return result.Data[0].Embedding, nil
+}
+
+// ChatCompletionConfig holds the configuration for chat completion
+type ChatCompletionConfig struct {
+	Messages  []openai.ChatCompletionMessage
+	Model     string
+	Stream    bool
+	JSONMode  bool
+	MaxTokens int
+}
+
+// ChatCompletion handles chat completions with configurable options
+func (s *Service) ChatCompletion(config ChatCompletionConfig) (openai.ChatCompletionResponse, error) {
+	// Set default values
+	if config.Model == "" {
+		config.Model = "gpt-4"
+	}
+	if config.MaxTokens == 0 {
+		config.MaxTokens = 4096
+	}
+
+	// Prepare request
+	req := openai.ChatCompletionRequest{
+		Model:    config.Model,
+		Messages: config.Messages,
+		Stream:   config.Stream,
+	}
+
+	// Add JSON mode if specified
+	if config.JSONMode {
+		req.ResponseFormat = &openai.ChatCompletionResponseFormat{
+			Type: "json_object",
+		}
+	}
+
+	// Add max tokens if not using o1 models
+	if config.Model != "o1-mini" && config.Model != "o1-preview" {
+		req.MaxTokens = config.MaxTokens
+	}
+
+	// Make the request
+	response, err := s.openai.CreateChatCompletion(context.Background(), req)
+	if err != nil {
+		return openai.ChatCompletionResponse{}, fmt.Errorf("error in OpenAI completion: %w", err)
+	}
+
+	return response, nil
 }
