@@ -24,7 +24,7 @@ func main() {
 		return
 	}
 
-	model := "gpt-4o"
+	model := "gpt-4o-mini"
 
 	messages := []openai.ChatCompletionMessage{
 		{Role: "system", Content: systemPrompt},
