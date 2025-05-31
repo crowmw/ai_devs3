@@ -10,14 +10,17 @@ import (
 
 // EnvService handles environment configuration
 type Service struct {
-	openAIKey    string
-	xyzURL       string
-	myAPIKey     string
-	poligonURL   string
-	c3ntralaURL  string
-	qdrantURL    string
-	qdrantAPIKey string
-	jinaAPIKey   string
+	openAIKey     string
+	xyzURL        string
+	myAPIKey      string
+	poligonURL    string
+	c3ntralaURL   string
+	qdrantURL     string
+	qdrantAPIKey  string
+	jinaAPIKey    string
+	neo4jURL      string
+	neo4jUsername string
+	neo4jPassword string
 }
 
 // validateEnv checks if all required environment variables are set
@@ -49,6 +52,9 @@ func NewService() (*Service, error) {
 		"QDRANT_URL":     os.Getenv("QDRANT_URL"),
 		"QDRANT_API_KEY": os.Getenv("QDRANT_API_KEY"),
 		"JINA_API_KEY":   os.Getenv("JINA_API_KEY"),
+		"NEO4J_URL":      os.Getenv("NEO4J_URL"),
+		"NEO4J_USERNAME": os.Getenv("NEO4J_USERNAME"),
+		"NEO4J_PASSWORD": os.Getenv("NEO4J_PASSWORD"),
 	}
 
 	if err := validateEnv(envVars); err != nil {
@@ -56,14 +62,17 @@ func NewService() (*Service, error) {
 	}
 
 	return &Service{
-		openAIKey:    envVars["OPENAI_API_KEY"],
-		xyzURL:       envVars["XYZ_URL"],
-		myAPIKey:     envVars["MY_API_KEY"],
-		poligonURL:   envVars["POLIGON_URL"],
-		c3ntralaURL:  envVars["C3NTRALA_URL"],
-		qdrantURL:    envVars["QDRANT_URL"],
-		qdrantAPIKey: envVars["QDRANT_API_KEY"],
-		jinaAPIKey:   envVars["JINA_API_KEY"],
+		openAIKey:     envVars["OPENAI_API_KEY"],
+		xyzURL:        envVars["XYZ_URL"],
+		myAPIKey:      envVars["MY_API_KEY"],
+		poligonURL:    envVars["POLIGON_URL"],
+		c3ntralaURL:   envVars["C3NTRALA_URL"],
+		qdrantURL:     envVars["QDRANT_URL"],
+		qdrantAPIKey:  envVars["QDRANT_API_KEY"],
+		jinaAPIKey:    envVars["JINA_API_KEY"],
+		neo4jURL:      envVars["NEO4J_URL"],
+		neo4jUsername: envVars["NEO4J_USERNAME"],
+		neo4jPassword: envVars["NEO4J_PASSWORD"],
 	}, nil
 }
 
@@ -105,4 +114,20 @@ func (s *Service) GetQdrantAPIKey() string {
 // GetJinaAPIKey returns the Jina API key
 func (s *Service) GetJinaAPIKey() string {
 	return s.jinaAPIKey
+}
+
+func (s *Service) GetNeo4jConfig() struct {
+	URL      string `json:"url"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+} {
+	return struct {
+		URL      string `json:"url"`
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}{
+		URL:      s.neo4jURL,
+		Username: s.neo4jUsername,
+		Password: s.neo4jPassword,
+	}
 }
