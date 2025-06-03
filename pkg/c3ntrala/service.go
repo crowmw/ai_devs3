@@ -24,7 +24,7 @@ func NewService(envSvc *env.Service) (*Service, error) {
 	}, nil
 }
 
-func (s *Service) PostReport(task string, answer string) (string, error) {
+func (s *Service) PostReport(task string, answer interface{}) (string, error) {
 	fmt.Println("Sending report to C3ntrala...")
 
 	postData := map[string]interface{}{
@@ -32,6 +32,8 @@ func (s *Service) PostReport(task string, answer string) (string, error) {
 		"answer": answer,
 		"apikey": s.apiKey,
 	}
+
+	fmt.Println("❇️ Post data:", postData)
 
 	resp, err := http.SendPost(
 		s.baseUrl+"/report",
