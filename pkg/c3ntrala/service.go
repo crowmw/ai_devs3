@@ -3,6 +3,7 @@ package c3ntrala
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/crowmw/ai_devs3/pkg/env"
@@ -119,4 +120,70 @@ func (s *Service) GetWhoWasSeenThere(city string) ([]string, error) {
 	).Replace(response.Message)
 
 	return strings.Split(message, " "), nil
+}
+
+func (s *Service) GetPhotos() ([]string, error) {
+	url := s.baseUrl + "/report"
+
+	body, err := http.SendPost(url, map[string]interface{}{
+		"task":   "photos",
+		"apikey": s.apiKey,
+		"answer": "START",
+	})
+
+	var resp struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
+	err = json.Unmarshal([]byte(body), &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract PNG filenames using regex
+	re := regexp.MustCompile(`IMG_\d+\.PNG`)
+	matches := re.FindAllString(resp.Message, -1)
+
+	// Create full URLs
+	baseURL := s.baseUrl + "/dane/barbara/"
+	urls := make([]string, len(matches))
+	for i, filename := range matches {
+		urls[i] = baseURL + filename
+	}
+
+	return urls, nil
+}
+
+func (s *Service) FixPhoto(answer string) (string, error) {
+	url := s.baseUrl + "/report"
+
+	body, err := http.SendPost(url, map[string]interface{}{
+		"task":   "photos",
+		"apikey": s.apiKey,
+		"answer": answer,
+	})
+
+	var resp struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
+	err = json.Unmarshal([]byte(body), &resp)
+	if err != nil {
+		return "", err
+	}
+	fmt.Println("❇️ Response:", resp.Message)
+	// Extract PNG filename using regex
+	re := regexp.MustCompile(`IMG_\d+_[A-Z0-9]+\.PNG`)
+	matches := re.FindAllString(resp.Message, -1)
+
+	// Create full URL
+	baseURL := s.baseUrl + "/dane/barbara/"
+	urls := make([]string, len(matches))
+	for i, filename := range matches {
+		urls[i] = baseURL + filename
+	}
+
+	fmt.Println("❇️ FIXED URL:", urls[0])
+
+	return urls[0], nil
 }
