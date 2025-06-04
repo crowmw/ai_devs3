@@ -315,3 +315,8 @@ func ProcessImageElements(doc *html.Node, outputDir string) error {
 
 	return nil
 }
+
+func GetFilenameFromURL(url string) string {
+	parts := strings.Split(url, "/")
+	return parts[len(parts)-1]
+}

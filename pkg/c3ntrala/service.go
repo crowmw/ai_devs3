@@ -189,3 +189,19 @@ func (s *Service) FixPhoto(answer string) (string, error) {
 
 	return urls[0], nil
 }
+
+func (s *Service) GetSoftoQuestions() (map[string]string, error) {
+	body, err := http.FetchData(s.baseUrl + "/data/" + s.apiKey + "/softo.json")
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	var questions map[string]string
+	err = json.Unmarshal([]byte(body), &questions)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return questions, nil
+}
