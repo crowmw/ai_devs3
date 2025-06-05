@@ -33,7 +33,7 @@ func (s *Service) PostReport(task string, answer interface{}) (string, error) {
 		"apikey": s.apiKey,
 	}
 
-	fmt.Println("❇️ Post data:", postData)
+	fmt.Println(postData)
 
 	resp, err := http.SendPost(
 		s.baseUrl+"/report",

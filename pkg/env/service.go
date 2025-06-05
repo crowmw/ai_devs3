@@ -22,6 +22,7 @@ type Service struct {
 	neo4jUsername string
 	neo4jPassword string
 	softoURL      string
+	ngrokURL      string
 }
 
 // validateEnv checks if all required environment variables are set
@@ -57,6 +58,7 @@ func NewService() (*Service, error) {
 		"NEO4J_USERNAME": os.Getenv("NEO4J_USERNAME"),
 		"NEO4J_PASSWORD": os.Getenv("NEO4J_PASSWORD"),
 		"SOFTO_URL":      os.Getenv("SOFTO_URL"),
+		"NGROK_URL":      os.Getenv("NGROK_URL"),
 	}
 
 	if err := validateEnv(envVars); err != nil {
@@ -76,6 +78,7 @@ func NewService() (*Service, error) {
 		neo4jUsername: envVars["NEO4J_USERNAME"],
 		neo4jPassword: envVars["NEO4J_PASSWORD"],
 		softoURL:      envVars["SOFTO_URL"],
+		ngrokURL:      envVars["NGROK_URL"],
 	}, nil
 }
 
@@ -121,6 +124,10 @@ func (s *Service) GetJinaAPIKey() string {
 
 func (s *Service) GetSoftoURL() string {
 	return s.softoURL
+}
+
+func (s *Service) GetNGrokURL() string {
+	return s.ngrokURL
 }
 
 func (s *Service) GetNeo4jConfig() struct {
