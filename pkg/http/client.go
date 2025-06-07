@@ -119,15 +119,23 @@ func SendFormData(targetURL string, formData map[string]string) (string, error) 
 	return string(body), nil
 }
 
-// FetchJSONData retrieves and unmarshals JSON data from the specified URL into the provided target
-func FetchJSONData(url string, target interface{}) error {
-	data, err := FetchData(url)
+// FetchJSONData fetches JSON data from a URL and unmarshals it into the provided interface
+func FetchJSONData(url string, v interface{}) error {
+	resp, err := http.Get(url)
 	if err != nil {
-		return fmt.Errorf("error fetching JSON data: %w", err)
+		return fmt.Errorf("failed to fetch data: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	if err := json.Unmarshal(data, target); err != nil {
-		return fmt.Errorf("error unmarshaling JSON data: %w", err)
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.UseNumber() // Use Number instead of float64 for numbers
+	if err := decoder.Decode(v); err != nil {
+		return fmt.Errorf("failed to decode JSON: %w", err)
 	}
 
 	return nil

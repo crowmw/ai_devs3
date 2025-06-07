@@ -3,10 +3,12 @@ package ai
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/crowmw/ai_devs3/pkg/env"
 	"github.com/sashabaranov/go-openai"
@@ -147,4 +149,56 @@ func (s *Service) ChatCompletion(config ChatCompletionConfig) (openai.ChatComple
 	}
 
 	return response, nil
+}
+
+// ProcessImageResult holds the result of image processing
+type OCRImageResult struct {
+	Text   string
+	Source string
+}
+
+// ProcessImage processes an image using GPT-4 Vision
+func (s *Service) OCRImage(imagePath string) (*OCRImageResult, error) {
+	// Read the image file
+	fmt.Println("Reading image file...")
+	imageData, err := os.ReadFile(imagePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image file: %w", err)
+	}
+
+	fmt.Println("Converting image to base64...")
+	// Convert image to base64
+	base64Image := base64.StdEncoding.EncodeToString(imageData)
+
+	fmt.Println("Creating chat completion request...")
+	// Create the chat completion request
+	response, err := s.ChatCompletion(ChatCompletionConfig{
+		Model: "gpt-4.1",
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role: "user",
+				MultiContent: []openai.ChatMessagePart{
+					{
+						Type: openai.ChatMessagePartTypeText,
+						Text: "Read the text from the image. Text is in Polish. Return only the text, no other text or Markdown formatting.",
+					},
+					{
+						Type: openai.ChatMessagePartTypeImageURL,
+						ImageURL: &openai.ChatMessageImageURL{
+							URL: fmt.Sprintf("data:image/png;base64,%s", base64Image),
+						},
+					},
+				},
+			},
+		},
+		// MaxTokens: 300,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to process image with GPT-4o: %w", err)
+	}
+
+	return &OCRImageResult{
+		Text:   response.Choices[0].Message.Content,
+		Source: imagePath,
+	}, nil
 }
