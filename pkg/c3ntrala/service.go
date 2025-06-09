@@ -190,6 +190,22 @@ func (s *Service) FixPhoto(answer string) (string, error) {
 	return urls[0], nil
 }
 
+func (s *Service) GetQuestions(path string) (map[string]string, error) {
+	body, err := http.FetchData(s.baseUrl + "/data/" + s.apiKey + path)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	var questions map[string]string
+	err = json.Unmarshal([]byte(body), &questions)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return questions, nil
+}
+
 func (s *Service) GetSoftoQuestions() (map[string]string, error) {
 	body, err := http.FetchData(s.baseUrl + "/data/" + s.apiKey + "/softo.json")
 	if err != nil {
@@ -204,4 +220,28 @@ func (s *Service) GetSoftoQuestions() (map[string]string, error) {
 		return nil, err
 	}
 	return questions, nil
+}
+
+type PhoneData struct {
+	Rozmowa1 []string `json:"rozmowa1"`
+	Rozmowa2 []string `json:"rozmowa2"`
+	Rozmowa3 []string `json:"rozmowa3"`
+	Rozmowa4 []string `json:"rozmowa4"`
+	Rozmowa5 []string `json:"rozmowa5"`
+}
+
+func (s *Service) GetPhoneData() (PhoneData, error) {
+	body, err := http.FetchData(s.baseUrl + "/data/" + s.apiKey + "/phone_sorted.json")
+	if err != nil {
+		fmt.Println(err)
+		return PhoneData{}, err
+	}
+
+	var phoneData PhoneData
+	err = json.Unmarshal([]byte(body), &phoneData)
+	if err != nil {
+		fmt.Println(err)
+		return PhoneData{}, err
+	}
+	return phoneData, nil
 }
