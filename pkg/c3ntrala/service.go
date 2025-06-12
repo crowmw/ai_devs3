@@ -8,6 +8,7 @@ import (
 
 	"github.com/crowmw/ai_devs3/pkg/env"
 	"github.com/crowmw/ai_devs3/pkg/http"
+	"github.com/crowmw/ai_devs3/pkg/processor"
 )
 
 type Service struct {
@@ -244,4 +245,31 @@ func (s *Service) GetPhoneData() (PhoneData, error) {
 		return PhoneData{}, err
 	}
 	return phoneData, nil
+}
+
+func (s *Service) GetLogs() (string, error) {
+	body, err := http.FetchData(s.baseUrl + "/data/" + s.apiKey + "/gps.txt")
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+
+	logs := processor.ReadLinesFromTextFileAsString(body)
+	return logs, nil
+}
+
+func (s *Service) GetGpsQuestion() (string, error) {
+	body, err := http.FetchData(s.baseUrl + "/data/" + s.apiKey + "/gps_question.json")
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+
+	var question map[string]string
+	err = json.Unmarshal([]byte(body), &question)
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+	return question["question"], nil
 }
