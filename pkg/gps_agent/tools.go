@@ -23,8 +23,8 @@ func getTools() []Tool {
 		},
 		{
 			Name:        "gps",
-			Description: "Returns GPS coordinates for a person when given their userID. Requires using person_id_finder first to obtain the userID.",
-			Instruction: `Provide a JSON payload with "userID" field containing the ID of the person you want coordinates for, like: {"userID": "69"}`,
+			Description: "Returns GPS coordinates for a person when given their userID. STRICTLY ONE numeric userID per call. Do NOT include lat/lon or multiple IDs.",
+			Instruction: `Provide a JSON payload with ONLY "userID" field containing ONE numeric ID, like: {"userID": "69"}. NEVER include any other keys (e.g., "answer", "lat", "lon"). NEVER send arrays or comma-separated IDs.`,
 		},
 		{
 			Name:        "final_answer",

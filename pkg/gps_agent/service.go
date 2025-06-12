@@ -111,7 +111,7 @@ func (s *Service) executeThinkingPhase(question string) {
 	fmt.Println("\n🔍 [THINKING] Analyzing available tools...")
 
 	toolsAnalysisResponse, err := s.aiSvc.ChatCompletion(ai.ChatCompletionConfig{
-		Model: "gpt-4.1",
+		Model: "gpt-4o",
 		Messages: []openai.ChatCompletionMessage{
 			{Role: openai.ChatMessageRoleSystem, Content: getToolsPrompt(&s.State)},
 			{Role: openai.ChatMessageRoleUser, Content: question},
@@ -141,7 +141,7 @@ func (s *Service) executePlanningPhase(userMessage string) {
 	fmt.Println("\n📋 [PLANNING] Creating execution plan...")
 
 	taskThoughtsResponse, err := s.aiSvc.ChatCompletion(ai.ChatCompletionConfig{
-		Model: "gpt-4.1",
+		Model: "gpt-4o",
 		Messages: []openai.ChatCompletionMessage{
 			{Role: openai.ChatMessageRoleSystem, Content: getTaskThoughtsPrompt(&s.State)},
 			{Role: openai.ChatMessageRoleUser, Content: userMessage},
@@ -198,7 +198,7 @@ func (s *Service) executePlanningPhase(userMessage string) {
 	fmt.Println("\n🎯 [PLANNING] Planning actions for current task...")
 	actionThoughtsPrompt := getActionThoughtsPrompt(&s.State)
 	actionThoughtsResponse, err := s.aiSvc.ChatCompletion(ai.ChatCompletionConfig{
-		Model: "gpt-4.1",
+		Model: "gpt-4o",
 		Messages: []openai.ChatCompletionMessage{
 			{Role: openai.ChatMessageRoleSystem, Content: actionThoughtsPrompt},
 			{Role: openai.ChatMessageRoleUser, Content: userMessage},
@@ -271,7 +271,7 @@ func (s *Service) executeActionPhase(userMessage string) {
 	fmt.Println("\n⚡ [ACTION] Preparing to execute action...")
 	systemMessage := s.getUseThoughtsPrompt()
 	useThoughtsResponse, err := s.aiSvc.ChatCompletion(ai.ChatCompletionConfig{
-		Model: "gpt-4.1",
+		Model: "gpt-4o",
 		Messages: []openai.ChatCompletionMessage{
 			{Role: openai.ChatMessageRoleSystem, Content: systemMessage},
 			{Role: openai.ChatMessageRoleUser, Content: userMessage},
