@@ -140,3 +140,30 @@ func FetchJSONData(url string, v interface{}) error {
 
 	return nil
 }
+
+// FetchJSONData fetches JSON data from a URL and unmarshals it into the provided interface
+func POSTJSONData(url string, body interface{}, v interface{}) error {
+	jsonData, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("error marshaling JSON: %w", err)
+	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to fetch data: %w", err)
+	}
+	defer resp.Body.Close()
+
+	bodyResponse, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	decoder := json.NewDecoder(bytes.NewReader(bodyResponse))
+	decoder.UseNumber() // Use Number instead of float64 for numbers
+	if err := decoder.Decode(v); err != nil {
+		return fmt.Errorf("failed to decode JSON: %w", err)
+	}
+
+	return nil
+}

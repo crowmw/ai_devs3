@@ -25,6 +25,7 @@ all:
 	@echo "  make s04e05	- Run s04e05 program"
 	@echo "  make s05e01	- Run s05e01 program"
 	@echo "  make s05e02	- Run s05e02 program"
+	@echo "  make s05e03	- Run s05e03 program"
 	
 # Run poligon program
 poligon:
@@ -135,3 +136,8 @@ s05e01:
 s05e02:
 	@echo "Running s05e02 program..."
 	@go run cmd/s05e02/main.go
+
+# Run s05e03 program
+s05e03:
+	@echo "Running s05e03 program..."
+	@go run cmd/s05e03/main.go
