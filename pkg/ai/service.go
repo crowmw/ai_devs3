@@ -202,3 +202,98 @@ func (s *Service) OCRImage(imagePath string) (*OCRImageResult, error) {
 		Source: imagePath,
 	}, nil
 }
+
+// ProcessImage processes an image using GPT-4 Vision
+func (s *Service) ImageAnalysis(imagePath string) (string, error) {
+	// Read the image file
+	fmt.Println("Reading image file...")
+	imageData, err := os.ReadFile(imagePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read image file: %w", err)
+	}
+
+	fmt.Println("Converting image to base64...")
+	// Convert image to base64
+	base64Image := base64.StdEncoding.EncodeToString(imageData)
+
+	fmt.Println("Creating chat completion request...")
+	// Create the chat completion request
+	response, err := s.ChatCompletion(ChatCompletionConfig{
+		Model: "gpt-4.1",
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role: "user",
+				MultiContent: []openai.ChatMessagePart{
+					{
+						Type: openai.ChatMessagePartTypeText,
+						Text: "Analyze the image and return a description of the image. Text is in Polish. Return only the text, no other text or Markdown formatting.",
+					},
+					{
+						Type: openai.ChatMessagePartTypeImageURL,
+						ImageURL: &openai.ChatMessageImageURL{
+							URL: fmt.Sprintf("data:image/png;base64,%s", base64Image),
+						},
+					},
+				},
+			},
+		},
+		// MaxTokens: 300,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to process image with GPT-4o: %w", err)
+	}
+
+	return response.Choices[0].Message.Content, nil
+}
+
+func (s *Service) AudioAnalysis(audioFileUrl string) (string, error) {
+	fmt.Printf("🎵 [AUDIO] Starting audio analysis for URL: %s\n", audioFileUrl)
+
+	// Create a temporary file to store the audio
+	tempFile, err := os.CreateTemp("", "audio-*.mp3")
+	if err != nil {
+		return "", fmt.Errorf("error creating temp file: %w", err)
+	}
+	defer os.Remove(tempFile.Name()) // Clean up the temp file when done
+	defer tempFile.Close()
+
+	fmt.Println("📥 [AUDIO] Downloading audio file...")
+	// Download the audio file
+	httpResp, err := http.Get(audioFileUrl)
+	if err != nil {
+		return "", fmt.Errorf("error downloading audio file: %w", err)
+	}
+	defer httpResp.Body.Close()
+
+	if httpResp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("error downloading audio file: status code %d", httpResp.StatusCode)
+	}
+
+	// Copy the downloaded content to the temp file
+	_, err = io.Copy(tempFile, httpResp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error saving audio file: %w", err)
+	}
+
+	// Ensure all data is written to disk
+	if err := tempFile.Sync(); err != nil {
+		return "", fmt.Errorf("error syncing temp file: %w", err)
+	}
+
+	fmt.Println("🤖 [AUDIO] Sending audio to OpenAI for transcription...")
+	// Create the transcription request
+	req := openai.AudioRequest{
+		Model:    openai.Whisper1,
+		FilePath: tempFile.Name(),
+		Format:   openai.AudioResponseFormatText,
+	}
+
+	// Send the request to OpenAI
+	transcriptionResp, err := s.openai.CreateTranscription(context.Background(), req)
+	if err != nil {
+		return "", fmt.Errorf("error creating transcription: %w", err)
+	}
+
+	fmt.Println("✅ [AUDIO] Successfully transcribed audio")
+	return transcriptionResp.Text, nil
+}
